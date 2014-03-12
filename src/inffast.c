@@ -8,6 +8,10 @@
 #include "inflate.h"
 #include "inffast.h"
 
+#ifdef HAVE_ARM_NEON
+extern void inflate_fast_copy_neon(unsigned len, unsigned char **out, unsigned char *from);
+#endif
+
 #ifndef ASMINF
 
 /* Allow machine dependent optimization for post-increment or pre-increment.
@@ -253,6 +257,10 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                             from = out - dist;  /* rest from output */
                         }
                     }
+
+#ifdef HAVE_ARM_NEON
+                    inflate_fast_copy_neon(len, &out, from);
+#else                    
                     while (len > 2) {
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
@@ -264,10 +272,16 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                         if (len > 1)
                             PUP(out) = PUP(from);
                     }
+#endif //HAVE_ARM_NEON
                 }
                 else {
                     from = out - dist;          /* copy direct from output */
-                    do {                        /* minimum length is three */
+
+#ifdef HAVE_ARM_NEON
+//#error "fuck zip neon"
+                    inflate_fast_copy_neon(len, &out, from);
+#else   
+                   do {                        /* minimum length is three */
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
                         PUP(out) = PUP(from);
@@ -278,6 +292,7 @@ unsigned start;         /* inflate()'s starting value for strm->avail_out */
                         if (len > 1)
                             PUP(out) = PUP(from);
                     }
+#endif//HAVE_ARM_NEON
                 }
             }
             else if ((op & 64) == 0) {          /* 2nd level distance code */

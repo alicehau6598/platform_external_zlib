@@ -4,7 +4,6 @@ include $(CLEAR_VARS)
 # measurements show that the ARM version of ZLib is about x1.17 faster
 # than the thumb one...
 LOCAL_ARM_MODE := arm
-LOCAL_CLANG := true
 
 zlib_files := \
 	src/adler32.c \
@@ -26,8 +25,16 @@ zlib_files := \
 LOCAL_MODULE := libz
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -O3 -DUSE_MMAP
-LOCAL_CFLAGS += -ftrapv
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+	LOCAL_CFLAGS += -DHAVE_ARM_NEON
+endif
 LOCAL_SRC_FILES := $(zlib_files)
+
+ifeq ($(ARCH_ARM_HAVE_NEON),true)
+LOCAL_SRC_FILES += \
+	src/inflate_fast_copy_neon.S
+endif
+
 ifeq ($(TARGET_ARCH),arm)
   LOCAL_SDK_VERSION := 9
 endif
@@ -35,12 +42,10 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_CLANG := true
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libz
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -O3 -DUSE_MMAP
-LOCAL_CFLAGS += -ftrapv
 LOCAL_SRC_FILES := $(zlib_files)
 ifeq ($(TARGET_ARCH),arm)
   LOCAL_SDK_VERSION := 9
@@ -49,24 +54,20 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_CLANG := true
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libz
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -O3 -DUSE_MMAP
-LOCAL_CFLAGS += -ftrapv
 LOCAL_SRC_FILES := $(zlib_files)
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 
 include $(CLEAR_VARS)
 
-LOCAL_CLANG := true
 LOCAL_ARM_MODE := arm
 LOCAL_MODULE := libz-host
 LOCAL_MODULE_TAGS := optional
 LOCAL_CFLAGS += -O3 -DUSE_MMAP
-LOCAL_CFLAGS += -ftrapv
 LOCAL_SRC_FILES := $(zlib_files)
 include $(BUILD_HOST_SHARED_LIBRARY)
 
@@ -80,19 +81,15 @@ include $(BUILD_HOST_SHARED_LIBRARY)
 # later, please see if you can get a bit further in removing libunz...
 
 include $(CLEAR_VARS)
-LOCAL_CLANG := true
 LOCAL_SRC_FILES := $(zlib_files)
 LOCAL_MODULE:= libunz
 LOCAL_ARM_MODE := arm
-LOCAL_CFLAGS += -ftrapv
 include $(BUILD_HOST_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
-LOCAL_CLANG := true
 LOCAL_SRC_FILES := $(zlib_files)
 LOCAL_MODULE:= libunz
 LOCAL_ARM_MODE := arm
-LOCAL_CFLAGS += -ftrapv
 ifeq ($(TARGET_ARCH),arm)
   LOCAL_SDK_VERSION := 9
 endif
@@ -100,7 +97,6 @@ include $(BUILD_STATIC_LIBRARY)
 
 include $(CLEAR_VARS)
 
-LOCAL_CLANG := true
 LOCAL_SRC_FILES:=        \
 	src/test/minigzip.c
 
@@ -108,18 +104,15 @@ LOCAL_MODULE:= gzip
 
 LOCAL_SHARED_LIBRARIES := libz
 
-LOCAL_CFLAGS += -ftrapv
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
 
-LOCAL_CLANG := true
 LOCAL_SRC_FILES:=        \
 	src/test/minigzip.c
 
 LOCAL_MODULE:= minigzip
 
-LOCAL_CFLAGS += -ftrapv
 LOCAL_STATIC_LIBRARIES := libz
 
 include $(BUILD_HOST_EXECUTABLE)
